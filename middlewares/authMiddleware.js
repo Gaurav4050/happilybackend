@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
-const dean = require("../models/dean");
+const Session = require("../models/session");
+const Auth = require("../models/auth");
 
 exports.requireSignIn = async (req, res, next) => {
   try {
@@ -14,14 +15,14 @@ exports.requireSignIn = async (req, res, next) => {
     res.status(401).send({
       success: false,
       error,
-      message: "Error in Requiresignin Middleware",
+      message: "SignIn Require && Error in Requiresignin Middleware",
     });
   }
 };
 
 exports.isDean = async (req, res, next) => {
   try {
-    const user = await dean.findById(req.user.userId);
+    const user = await Auth.find({ _id: req.user.userId, isDean: true });
     if (user) {
       next();
     } else {
@@ -35,7 +36,7 @@ exports.isDean = async (req, res, next) => {
     res.status(401).send({
       success: false,
       error,
-      message: "Error in admin middelware",
+      message: "Error in isDean middelware ",
     });
   }
 };

@@ -9,7 +9,7 @@ const { requireSignIn, isDean } = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 // Create a new session
-router.post("/create/:deanid", createSession);
+router.post("/create", requireSignIn, isDean, createSession);
 
 // Get a list of sessions with status "open"
 router.get("/open-sessions", requireSignIn, getOpenSession);

@@ -1,5 +1,5 @@
-const Student = require("../models/student");
-const Dean = require("../models/dean");
+const Auth = require("../models/auth");
+const Session = require("../models/session");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -9,7 +9,7 @@ exports.studentRegisterController = async (req, res) => {
     const { universityId, password, name } = req.body;
 
     // Check if the student already exists
-    const existingStudent = await Student.findOne({ universityId });
+    const existingStudent = await Auth.findOne({ universityId });
     if (existingStudent) {
       return res.status(400).json({ message: "Student already exists" });
     }
@@ -18,7 +18,7 @@ exports.studentRegisterController = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10); // Use 10 rounds of salting
 
     // Create a new student with the hashed password
-    const newStudent = new Student({
+    const newStudent = new Auth({
       universityId,
       password: hashedPassword,
       name,
@@ -35,10 +35,10 @@ exports.studentRegisterController = async (req, res) => {
 // register Dean
 exports.registerDeanController = async (req, res) => {
   try {
-    const { universityId, password } = req.body;
+    const { universityId, password, isDean, name } = req.body;
 
     // Check if the dean already exists
-    const existingDean = await Dean.findOne({ universityId });
+    const existingDean = await Auth.findOne({ universityId });
     if (existingDean) {
       return res.status(400).json({ message: "Dean already exists" });
     }
@@ -47,7 +47,12 @@ exports.registerDeanController = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10); // Use 10 rounds of salting
 
     // Create a new dean with the hashed password
-    const newDean = new Dean({ universityId, password: hashedPassword });
+    const newDean = new Auth({
+      universityId,
+      password: hashedPassword,
+      name,
+      isDean,
+    });
     await newDean.save();
 
     res.status(201).json({ newDean });
@@ -62,7 +67,7 @@ exports.studentLoginController = async (req, res) => {
   try {
     const { universityId, password } = req.body;
 
-    const student = await Student.findOne({ universityId });
+    const student = await Auth.findOne({ universityId });
 
     if (!student) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -91,7 +96,10 @@ exports.deanLoginController = async (req, res) => {
   try {
     // Authenticate the student
     const { universityId, password } = req.body;
-    const dean = await Dean.findOne({ universityId });
+    const dean = await Auth.findOne({
+      universityId: universityId,
+      isDean: true,
+    });
 
     if (!dean) {
       return res.status(401).json({ message: "Invalid credentials" });
