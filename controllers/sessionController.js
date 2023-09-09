@@ -25,11 +25,11 @@ exports.createSession = async (req, res) => {
       return res.status(404).json({ message: "Dean not found" });
     }
 
-    // Add the session to the dean's information to the session
-    session.credentials.push({
+    // Add  the dean's information to the session
+    session.credentials = {
       universityId: dean.universityId,
       name: dean.name,
-    });
+    };
 
     // Save the session to the database
     await session.save();
