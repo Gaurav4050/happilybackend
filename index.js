@@ -4,7 +4,7 @@ const authRoutes = require("./routes/auth");
 const sessionRoutes = require("./routes/session");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const closeSessions = require("./closeSession");
+const closeSessions = require("./closeSessions/closeSessions");
 const app = express();
 
 //configure env
