@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
 
-const deanSchema = new mongoose.Schema({
+const sessionSchema = new mongoose.Schema({
   status: { type: String, enum: ["open", "booked", "closed"], default: "open" },
 
   // deanId who created the session
-  deanId: { type: String, required: true, unique: true },
+  dean: { type: String, required: true },
+
   // name and universtiy id of the student who booked the session
   bookedBy: {
     universityId: { type: String },
@@ -15,4 +16,4 @@ const deanSchema = new mongoose.Schema({
   day: { type: String, enum: ["Thursday", "Friday"], required: true },
 });
 
-module.exports = mongoose.model("Sessions", deanSchema);
+module.exports = mongoose.model("Sessions", sessionSchema);

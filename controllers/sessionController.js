@@ -31,12 +31,13 @@ exports.createSession = async (req, res) => {
 
     // Create a new session
     const newSession = new Session({
+      dean: universityId,
       day,
       date,
     });
 
     // Create a new session
-    newSession.deanId = universityId;
+    // newSession.deanId = universityId;
 
     // Save the session to the database
     await newSession.save();
@@ -136,7 +137,7 @@ exports.getBookedSession = async (req, res) => {
 
     // Retrieve sessions created by the dean
     const sessions = await Session.find({
-      deanId: deanUniversityId,
+      dean: deanUniversityId,
       status: "booked",
     }).populate("bookedBy", "universityId");
 
