@@ -18,11 +18,6 @@ router.get("/open-sessions", requireSignIn, getOpenSession);
 router.post("/book/session", requireSignIn, bookSession);
 
 // Get all booked sessions with student details
-router.get(
-  "/booked-sessions/:deanUniversityId",
-  requireSignIn,
-  isDean,
-  getBookedSession
-);
+router.get("/booked-sessions", requireSignIn, isDean, getBookedSession);
 
 module.exports = router;

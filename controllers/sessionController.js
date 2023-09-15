@@ -115,11 +115,11 @@ exports.bookSession = async (req, res) => {
 // get all booked session whose status is pending
 
 exports.getBookedSession = async (req, res) => {
-  const deanUniversityId = req.params.deanUniversityId;
+  const { deanUniversityId, password } = req.body;
 
   try {
     // Verify dean's credentials
-    const dean = await User.findOne({
+    const dean = await Auth.findOne({
       universityId: deanUniversityId,
       userType: "dean",
     });
@@ -128,11 +128,17 @@ exports.getBookedSession = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    const isMatch = await bcrypt.compare(password, dean.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid Password" });
+    }
+
     // Retrieve sessions created by the dean
-    const sessions = await Session.find({ dean: deanUniversityId }).populate(
-      "bookedBy",
-      "universityId"
-    );
+    const sessions = await Session.find({
+      deanId: deanUniversityId,
+      status: "booked",
+    }).populate("bookedBy", "universityId");
 
     return res.status(200).json(sessions);
   } catch (error) {
