@@ -22,7 +22,7 @@ exports.requireSignIn = async (req, res, next) => {
 
 exports.isDean = async (req, res, next) => {
   try {
-    const user = await Auth.find({ _id: req.user.userId, isDean: true });
+    const user = await Auth.find({ _id: req.user.userId, userType: "dean" });
     if (user) {
       next();
     } else {

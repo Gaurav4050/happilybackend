@@ -14,10 +14,15 @@ router.post("/create", requireSignIn, isDean, createSession);
 // Get a list of sessions with status "open"
 router.get("/open-sessions", requireSignIn, getOpenSession);
 
-// Book a session
-router.post("/book/:studentId/:sessionId", requireSignIn, bookSession);
+// Book a session by student
+router.post("/book/session", requireSignIn, bookSession);
 
 // Get all booked sessions with student details
-router.get("/booked-sessions", requireSignIn, isDean, getBookedSession);
+router.get(
+  "/booked-sessions/:deanUniversityId",
+  requireSignIn,
+  isDean,
+  getBookedSession
+);
 
 module.exports = router;

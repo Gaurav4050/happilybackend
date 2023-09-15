@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 // register student
 exports.studentRegisterController = async (req, res) => {
   try {
-    const { universityId, password, name } = req.body;
+    const { universityId, password, name, userType } = req.body;
 
     // Check if the student already exists
     const existingStudent = await Auth.findOne({ universityId });
@@ -22,6 +22,7 @@ exports.studentRegisterController = async (req, res) => {
       universityId,
       password: hashedPassword,
       name,
+      userType,
     });
     await newStudent.save();
 
@@ -35,7 +36,7 @@ exports.studentRegisterController = async (req, res) => {
 // register Dean
 exports.registerDeanController = async (req, res) => {
   try {
-    const { universityId, password, isDean, name } = req.body;
+    const { universityId, password, name, userType } = req.body;
 
     // Check if the dean already exists
     const existingDean = await Auth.findOne({ universityId });
@@ -51,7 +52,7 @@ exports.registerDeanController = async (req, res) => {
       universityId,
       password: hashedPassword,
       name,
-      isDean,
+      userType,
     });
     await newDean.save();
 
@@ -96,9 +97,10 @@ exports.deanLoginController = async (req, res) => {
   try {
     // Authenticate the student
     const { universityId, password } = req.body;
+
     const dean = await Auth.findOne({
       universityId: universityId,
-      isDean: true,
+      userType: "dean",
     });
 
     if (!dean) {

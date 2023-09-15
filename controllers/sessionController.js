@@ -1,10 +1,27 @@
 const Session = require("../models/session");
 const Auth = require("../models/auth");
+const bcrypt = require("bcrypt");
 
 // creating session
 exports.createSession = async (req, res) => {
+  const { universityId, password, day, date } = req.body;
+
   try {
-    const { day, date } = req.body;
+    // Verify dean's credentials
+    const dean = await Auth.findOne({
+      universityId,
+      userType: "dean",
+    });
+
+    if (!dean) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, dean.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid Password" });
+    }
 
     if (day !== "Friday" && day !== "Thursday") {
       return res
@@ -13,106 +30,113 @@ exports.createSession = async (req, res) => {
     }
 
     // Create a new session
-    const session = new Session({
+    const newSession = new Session({
       day,
       date,
     });
 
-    // Find the dean who created the session
-    const dean = await Auth.findById(req.user.userId);
-
-    if (!dean) {
-      return res.status(404).json({ message: "Dean not found" });
-    }
-
-    // Add  the dean's information to the session
-    session.credentials = {
-      universityId: dean.universityId,
-      name: dean.name,
-    };
+    // Create a new session
+    newSession.deanId = universityId;
 
     // Save the session to the database
-    await session.save();
+    await newSession.save();
 
-    res.status(201).json({ message: "Session created successfully", session });
+    return res
+      .status(200)
+      .json({ message: "Session created successfully", session: newSession });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 // session list which are open
 exports.getOpenSession = async (req, res) => {
   try {
-    // find all session which are open
     const openSessions = await Session.find({ status: "open" });
 
     if (openSessions.length === 0) {
       return res.status(400).json({ message: "No open session is available" });
     }
-
-    res.json({ openSessions });
+    return res.status(200).json(openSessions);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 // Book Session
 exports.bookSession = async (req, res) => {
+  const { universityId, password, sessionId } = req.body;
+
   try {
-    const studentId = req.params.studentId;
-    const sessionId = req.params.sessionId;
+    // Verify student's credentials
+    const student = await Auth.findOne({
+      universityId,
+      userType: "student",
+    });
 
-    // Check if the student and session exist
-    const student = await Auth.findById(studentId);
-    const session = await Session.findById(sessionId); // Use findOne to find the dean with the session
-
-    if (!student || !session) {
-      return res.status(404).json({ message: "Student or session not found" });
+    if (!student) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check if the session is open for booking
-    if (session.status !== "open") {
-      return res
-        .status(400)
-        .json({ message: "Session is not open for booking" });
+    // Check if the session exists and is open
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
     }
 
-    // Update the session status to "pending" and associate it with the student
-    session.status = "pending";
-    session.studentId = studentId;
+    if (session.status === "booked") {
+      return res.status(400).json({ message: "Session already booked" });
+    }
 
-    // Save the updated dean document
+    // Add the session to the student's booked sessions
+    student.bookedSessions.push(sessionId);
+    await student.save();
+
+    // Update session status to 'booked'
+    session.status = "booked";
+
+    // Add the student to the session's bookedBy
+    session.bookedBy = {
+      universityId: student.universityId,
+    };
+
     await session.save();
 
-    res.json({ message: "Session booked successfully" });
+    return res.status(200).json({ message: "Session booked successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 // get all booked session whose status is pending
 
 exports.getBookedSession = async (req, res) => {
-  try {
-    // Find all sessions with status "pending" and populate the student details
-    const bookedSessions = await Session.find({ status: "pending" })
-      .populate({
-        path: "studentId",
-        model: Auth,
-        select: "universityId name",
-      })
-      .select("-credentials -__v");
+  const deanUniversityId = req.params.deanUniversityId;
 
-    if (bookedSessions.length === 0) {
-      return res.status(404).json({ message: "No pending sessions available" });
+  try {
+    // Verify dean's credentials
+    const dean = await User.findOne({
+      universityId: deanUniversityId,
+      userType: "dean",
+    });
+
+    if (!dean) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    res.json({ bookedSessions });
+    // Retrieve sessions created by the dean
+    const sessions = await Session.find({ dean: deanUniversityId }).populate(
+      "bookedBy",
+      "universityId"
+    );
+
+    return res.status(200).json(sessions);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
